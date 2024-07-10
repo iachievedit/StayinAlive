@@ -1,0 +1,10 @@
+## Interface: 11500
+## Version: 0.0.1
+## Title: Stayin' Alive
+## Author: iachievedit
+## Copyright:  The MIT License
+## Notes: I'm Still Alive
+## SavedVariables: StayinAlive_AccountDB
+## SavedVariablesPerCharacter: StayinAlive_CharacterDB
+
+StayinAliveMain.lua
