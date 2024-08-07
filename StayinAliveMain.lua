@@ -40,12 +40,25 @@ local playerGUID = UnitGUID("player")
 
 eventFrame:Show()
 eventFrame:RegisterEvent("PLAYER_LEVEL_CHANGED")
+eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 local function eventHandler(self, event, ...)
 
   if (event == "PLAYER_LEVEL_CHANGED") then
     print("Stayin alive!")
     playSound()
+  end
+
+  if (event == "PLAYER_REGEN_ENABLED") then
+    local max_health = UnitHealthMax("player")
+    local health = UnitHealth("player")
+    local health_percent = math.floor((health / max_health) * 100)
+
+    if health_percent < 20 then
+      print("Stayin alive!")
+      print("Health percent: " .. health_percent)
+      playSound()
+    end
   end
 
 end
