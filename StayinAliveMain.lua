@@ -30,8 +30,12 @@ local module = {}
 local moduleName = "StayinAliveMain"
 StayinAlive[moduleName] = module
 
-local function playSound()
+local function playStayinAlive()
   PlaySoundFile("Interface\\AddOns\\StayinAlive\\Sounds\\staying-alive.mp3")
+end
+
+local function playStillAlive()
+  PlaySoundFile("Interface\\AddOns\\StayinAlive\\Sounds\\still-alive.mp3")
 end
 
 -- Only for events
@@ -46,18 +50,30 @@ local function eventHandler(self, event, ...)
 
   if (event == "PLAYER_LEVEL_CHANGED") then
     print("Stayin alive!")
-    playSound()
+    local level = UnitLevel("player")
+    local name = UnitName("player")
+    local percentOfSixty = math.floor((level / 60) * 100)
+    SendChatMessage(name.." is stayin alive! Now level "..level..", "..percentOfSixty.."% to 60!","GUILD")
+    playStayinAlive()
   end
 
+  -- Best event for "out of combat"
   if (event == "PLAYER_REGEN_ENABLED") then
     local max_health = UnitHealthMax("player")
     local health = UnitHealth("player")
     local health_percent = math.floor((health / max_health) * 100)
 
-    if health_percent < 20 then
-      print("Stayin alive!")
-      print("Health percent: " .. health_percent)
-      playSound()
+    if health_percent == 0 then
+      local name = UnitName("player")
+      SendChatMessage(name.." has died!  F.  RIP.  Go agane!","GUILD")
+    elseif health_percent < 20 then
+
+      print("I'm still alive with only "..health_percent.."% health!")
+
+      local name = UnitName("player")
+      SendChatMessage(name.." narrowly escapes death with only "..health_percent..
+                            "% health, but is still alive!",  "GUILD")
+      playStillAlive()
     end
   end
 

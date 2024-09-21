@@ -1,5 +1,5 @@
 ## Interface: 11500
-## Version: 0.0.1
+## Version: 0.0.2
 ## Title: Stayin' Alive
 ## Author: iachievedit
 ## Copyright:  The MIT License
