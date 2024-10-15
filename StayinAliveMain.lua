@@ -27,8 +27,87 @@ local addonName, addon = ...
 local StayinAlive = addon
 
 local module = {}
-local moduleName = "StayinAliveMain"
+local moduleName = "StayinAlive"
 StayinAlive[moduleName] = module
+
+local function InitializeUI()
+
+  configFrame = CreateFrame("Frame", "StayInAliveConfigFrame", UIParent, "BasicFrameTemplateWithInset")
+  configFrame:SetSize(400, 200) -- Set the width and height
+  configFrame:SetPoint("CENTER") -- Set the frame position
+  configFrame:EnableMouse(true)
+  configFrame:SetMovable(true)
+  configFrame:RegisterForDrag("LeftButton")
+  configFrame:SetScript("OnDragStart", configFrame.StartMoving)
+  configFrame:SetScript("OnDragStop", configFrame.StopMovingOrSizing)
+  configFrame:Hide() -- Hide the frame initially
+
+  -- Title for the settings frame
+  configFrame.title = configFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  configFrame.title:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 10, -4)
+  configFrame.title:SetText("Stayin' Alive")
+
+  -- Create a checkbox for sending output to guild chat
+  local sendToGuildCheckbox = CreateFrame("CheckButton", nil, configFrame, "UICheckButtonTemplate")
+  sendToGuildCheckbox:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -40)
+  sendToGuildCheckbox.Text:SetText("Send StayinAlive notifications to guild chat")
+  sendToGuildCheckbox:SetChecked(StayinAlive_CharacterDB.sendToGuildChat)
+
+  -- Create a label that says "I'm still alive"
+  local stillAliveLabel = configFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  stillAliveLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -80)
+  stillAliveLabel:SetText("Play Pearl Jam's 'Alive' if you escape combat with less than")
+
+  -- Create a slider for setting the health percentage threshold
+  -- Remove the Low and High labels
+  local healthThresholdSlider = CreateFrame("Slider", "HealthThresholdSlider", configFrame, "OptionsSliderTemplate")
+  healthThresholdSlider:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -100)
+  healthThresholdSlider:SetMinMaxValues(1, 100)
+  healthThresholdSlider:SetValueStep(1)
+  healthThresholdSlider:SetObeyStepOnDrag(true)
+  healthThresholdSlider:SetWidth(200)
+  healthThresholdSlider:SetValue(StayinAlive_CharacterDB.healthThreshold)
+  _G[healthThresholdSlider:GetName() .. 'Low']:SetText('')
+  _G[healthThresholdSlider:GetName() .. 'High']:SetText('')
+
+  -- Slider label
+  healthThresholdSlider.Text = healthThresholdSlider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  healthThresholdSlider.Text:SetPoint("RIGHT", healthThresholdSlider, "RIGHT", 100, 0)
+  healthThresholdSlider.Text:SetText(healthThresholdSlider:GetValue() .. "%".. " health")
+
+  -- Create a label that says "I'm still alive"
+  local copyrightLabel = configFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  copyrightLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -120)
+  copyrightLabel:SetText("Song clips used under fair use, 17 U.S. Code § 107")
+
+  -- Slider event handling
+  healthThresholdSlider:SetScript("OnValueChanged", function(self, value)
+    self.Text:SetText("Health Threshold: " .. math.floor(value) .. "%")
+    StayinAlive_CharacterDB.healthThreshold = math.floor(value)
+  end)
+
+  -- Checkbox event handling
+  sendToGuildCheckbox:SetScript("OnClick", function(self)
+    StayinAlive_CharacterDB.sendToGuildChat = self:GetChecked()
+      if self:GetChecked() then
+          print("StayinAlive notifications to guild chat enabled.")
+      else
+          print("StayinAlive notifications to guild chat disabled.")
+      end
+  end)
+
+  -- Create a button to close the settings frame
+  local closeButton = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate")
+  closeButton:SetSize(100, 30)
+  closeButton:SetPoint("BOTTOM", configFrame, "BOTTOM", 0, 20)
+  closeButton:SetText("Close")
+  closeButton:SetScript("OnClick", function()
+      configFrame:Hide()
+  end)
+end -- InitializeUI
+
+
+
 
 local function playStayinAlive()
   PlaySoundFile("Interface\\AddOns\\StayinAlive\\Sounds\\staying-alive.mp3")
@@ -44,17 +123,59 @@ local playerGUID = UnitGUID("player")
 
 eventFrame:Show()
 eventFrame:RegisterEvent("PLAYER_LEVEL_CHANGED")
+eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+eventFrame:RegisterEvent("ADDON_LOADED")
+
+target = ""
 
 local function eventHandler(self, event, ...)
+
+  if (event == "ADDON_LOADED") then
+    local addonName = ...
+    if addonName == "StayinAlive" then
+      print("StayinAlive loaded - Stay alive out there.")
+      print("For options, type /stayinalive")
+
+      if StayinAlive_CharacterDB == nil then
+        StayinAlive_CharacterDB = {
+          sendToGuildChat = false,
+          healthThreshold = 20
+        }
+      end
+      InitializeUI()
+
+      SLASH_STAYINALIVE1 = "/stayinalive"
+      SlashCmdList["STAYINALIVE"] = function()
+        if configFrame:IsShown() then
+          configFrame:Hide()
+        else
+          configFrame:Show()
+        end
+      end
+    end
+  end
 
   if (event == "PLAYER_LEVEL_CHANGED") then
     print("Stayin alive!")
     local level = UnitLevel("player")
     local name = UnitName("player")
     local percentOfSixty = math.floor((level / 60) * 100)
-    SendChatMessage(name.." is stayin alive! Now level "..level..", "..percentOfSixty.."% to 60!","GUILD")
+
+    if StayinAlive_CharacterDB.sendToGuildChat then
+      SendChatMessage(name.." is stayin alive! Now level "..level..", "..percentOfSixty.."% to 60!","GUILD")
+    else
+      print(name.." is stayin alive! Now level "..level..", "..percentOfSixty.."% to 60!")
+    end
+
     playStayinAlive()
+
+  end
+
+  -- Best event for "in combat"
+  if (event == "PLAYER_REGEN_DISABLED") then
+    target = UnitName("target")
+    --print("Stayin alive against "..target.."!")
   end
 
   -- Best event for "out of combat"
@@ -62,16 +183,16 @@ local function eventHandler(self, event, ...)
     local max_health = UnitHealthMax("player")
     local health = UnitHealth("player")
     local health_percent = math.floor((health / max_health) * 100)
+    local name = UnitName("player")
 
-    if health_percent == 0 then
-      local name = UnitName("player")
-      SendChatMessage(name.." has died!  F.  RIP.  Go agane!","GUILD")
-    elseif health_percent < 20 then
+    if health_percent == 0 then  
+      SendChatMessage(name.." has died at the hands of a "..target.."!  F.  RIP.  Go agane!","GUILD")
+    elseif health_percent < StayinAlive_CharacterDB.healthThreshold then
+      print(name.." is still alive with "..health_percent.."% health")
 
-      print("I'm still alive with only "..health_percent.."% health!")
+      --print(target)
 
-      local name = UnitName("player")
-      SendChatMessage(name.." narrowly escapes death with only "..health_percent..
+      SendChatMessage(name.." narrowly escapes death from a "..target.." with only "..health_percent..
                             "% health, but is still alive!",  "GUILD")
       playStillAlive()
     end
@@ -80,7 +201,5 @@ local function eventHandler(self, event, ...)
 end
 
 eventFrame:SetScript("OnEvent", eventHandler)
-
-print("StayinAlive loaded - Stay alive out there.")
 
 

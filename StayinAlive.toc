@@ -4,7 +4,6 @@
 ## Author: iachievedit
 ## Copyright:  The MIT License
 ## Notes: I'm Still Alive
-## SavedVariables: StayinAlive_AccountDB
 ## SavedVariablesPerCharacter: StayinAlive_CharacterDB
 
 StayinAliveMain.lua
