@@ -73,7 +73,7 @@ local function InitializeUI()
 
   local copyrightLabel = configFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   copyrightLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -120)
-  copyrightLabel:SetText("Song clips used under fair use, 17 U.S. Code § 107")
+  copyrightLabel:SetText("Song clips used under fair use, 17 U.S. Code § 107.")
 
   healthThresholdSlider:SetScript("OnValueChanged", function(self, value)
     self.Text:SetText("Health Threshold: " .. math.floor(value) .. "%")
