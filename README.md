@@ -21,5 +21,5 @@ The song 'Stayin' Alive' by the Bee Gees is copyrighted material.  Likewise,
 the song 'Alive' by Pearl Jam is copyrighted material.
 
 I do not own the rights to either song nor have I been granted permission to use
-them. However, I believe that using the song in this context constitutes
+them. However, I believe that using short audio clips from each in this context constitutes
 Fair Use as provided for in section 107 of the US Copyright Law.
