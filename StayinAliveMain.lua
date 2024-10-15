@@ -33,7 +33,7 @@ StayinAlive[moduleName] = module
 local function InitializeUI()
 
   configFrame = CreateFrame("Frame", "StayInAliveConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-  configFrame:SetSize(400, 200) -- Set the width and height
+  configFrame:SetSize(400, 200)  -- Set the width and height
   configFrame:SetPoint("CENTER") -- Set the frame position
   configFrame:EnableMouse(true)
   configFrame:SetMovable(true)
@@ -42,24 +42,20 @@ local function InitializeUI()
   configFrame:SetScript("OnDragStop", configFrame.StopMovingOrSizing)
   configFrame:Hide() -- Hide the frame initially
 
-  -- Title for the settings frame
   configFrame.title = configFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   configFrame.title:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 10, -4)
   configFrame.title:SetText("Stayin' Alive")
 
-  -- Create a checkbox for sending output to guild chat
   local sendToGuildCheckbox = CreateFrame("CheckButton", nil, configFrame, "UICheckButtonTemplate")
   sendToGuildCheckbox:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -40)
   sendToGuildCheckbox.Text:SetText("Send StayinAlive notifications to guild chat")
   sendToGuildCheckbox:SetChecked(StayinAlive_CharacterDB.sendToGuildChat)
 
-  -- Create a label that says "I'm still alive"
   local stillAliveLabel = configFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   stillAliveLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -80)
   stillAliveLabel:SetText("Play Pearl Jam's 'Alive' if you escape combat with less than")
 
   -- Create a slider for setting the health percentage threshold
-  -- Remove the Low and High labels
   local healthThresholdSlider = CreateFrame("Slider", "HealthThresholdSlider", configFrame, "OptionsSliderTemplate")
   healthThresholdSlider:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -100)
   healthThresholdSlider:SetMinMaxValues(1, 100)
@@ -67,26 +63,23 @@ local function InitializeUI()
   healthThresholdSlider:SetObeyStepOnDrag(true)
   healthThresholdSlider:SetWidth(200)
   healthThresholdSlider:SetValue(StayinAlive_CharacterDB.healthThreshold)
+  -- Remove the Low and High labels
   _G[healthThresholdSlider:GetName() .. 'Low']:SetText('')
   _G[healthThresholdSlider:GetName() .. 'High']:SetText('')
 
-  -- Slider label
   healthThresholdSlider.Text = healthThresholdSlider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   healthThresholdSlider.Text:SetPoint("RIGHT", healthThresholdSlider, "RIGHT", 100, 0)
   healthThresholdSlider.Text:SetText(healthThresholdSlider:GetValue() .. "%".. " health")
 
-  -- Create a label that says "I'm still alive"
   local copyrightLabel = configFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   copyrightLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -120)
   copyrightLabel:SetText("Song clips used under fair use, 17 U.S. Code § 107")
 
-  -- Slider event handling
   healthThresholdSlider:SetScript("OnValueChanged", function(self, value)
     self.Text:SetText("Health Threshold: " .. math.floor(value) .. "%")
     StayinAlive_CharacterDB.healthThreshold = math.floor(value)
   end)
 
-  -- Checkbox event handling
   sendToGuildCheckbox:SetScript("OnClick", function(self)
     StayinAlive_CharacterDB.sendToGuildChat = self:GetChecked()
       if self:GetChecked() then
@@ -96,7 +89,6 @@ local function InitializeUI()
       end
   end)
 
-  -- Create a button to close the settings frame
   local closeButton = CreateFrame("Button", nil, configFrame, "UIPanelButtonTemplate")
   closeButton:SetSize(100, 30)
   closeButton:SetPoint("BOTTOM", configFrame, "BOTTOM", 0, 20)
