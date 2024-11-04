@@ -23,6 +23,7 @@
 
 ]]--
 
+
 local addonName, addon = ...
 local StayinAlive = addon
 
@@ -30,21 +31,23 @@ local module = {}
 local moduleName = "StayinAlive"
 StayinAlive[moduleName] = module
 
+local addonVersion = GetAddOnMetadata("StayinAlive", "Version")
+
 local function InitializeUI()
 
   configFrame = CreateFrame("Frame", "StayInAliveConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-  configFrame:SetSize(400, 200)  -- Set the width and height
-  configFrame:SetPoint("CENTER") -- Set the frame position
+  configFrame:SetSize(400, 240)  -- Width, Height
+  configFrame:SetPoint("CENTER") 
   configFrame:EnableMouse(true)
   configFrame:SetMovable(true)
   configFrame:RegisterForDrag("LeftButton")
   configFrame:SetScript("OnDragStart", configFrame.StartMoving)
   configFrame:SetScript("OnDragStop", configFrame.StopMovingOrSizing)
-  configFrame:Hide() -- Hide the frame initially
+  configFrame:Hide()
 
   configFrame.title = configFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   configFrame.title:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 10, -4)
-  configFrame.title:SetText("Stayin' Alive")
+  configFrame.title:SetText("Stayin' Alive" .. " v" .. addonVersion)
 
   local sendToGuildCheckbox = CreateFrame("CheckButton", nil, configFrame, "UICheckButtonTemplate")
   sendToGuildCheckbox:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -40)
@@ -58,7 +61,7 @@ local function InitializeUI()
   -- Create a slider for setting the health percentage threshold
   local healthThresholdSlider = CreateFrame("Slider", "HealthThresholdSlider", configFrame, "OptionsSliderTemplate")
   healthThresholdSlider:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -100)
-  healthThresholdSlider:SetMinMaxValues(1, 100)
+  healthThresholdSlider:SetMinMaxValues(10, 80)
   healthThresholdSlider:SetValueStep(1)
   healthThresholdSlider:SetObeyStepOnDrag(true)
   healthThresholdSlider:SetWidth(200)
@@ -75,8 +78,21 @@ local function InitializeUI()
   copyrightLabel:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -120)
   copyrightLabel:SetText("Song clips used under fair use, 17 U.S. Code § 107.")
 
+  local debug = CreateFrame("CheckButton", nil, configFrame, "UICheckButtonTemplate")
+  debug:SetPoint("TOPLEFT", configFrame, "TOPLEFT", 20, -140)
+  debug.Text:SetText("Debug notifications")
+  debug:SetChecked(StayinAlive_CharacterDB.debugMessages)
+  debug:SetScript("OnClick", function(self)
+    StayinAlive_CharacterDB.debugMessages = self:GetChecked()
+    if self:GetChecked() then
+      print("StayinAlive debug messages enabled.")
+    else
+      print("StayinAlive debug messages disabled.")
+    end
+  end)
+
   healthThresholdSlider:SetScript("OnValueChanged", function(self, value)
-    self.Text:SetText("Health Threshold: " .. math.floor(value) .. "%")
+    self.Text:SetText(math.floor(value) .. "% health")
     StayinAlive_CharacterDB.healthThreshold = math.floor(value)
   end)
 
@@ -98,15 +114,16 @@ local function InitializeUI()
   end)
 end -- InitializeUI
 
-
-
-
 local function playStayinAlive()
   PlaySoundFile("Interface\\AddOns\\StayinAlive\\Sounds\\staying-alive.mp3")
 end
 
 local function playStillAlive()
   PlaySoundFile("Interface\\AddOns\\StayinAlive\\Sounds\\still-alive.mp3")
+end
+
+local function playBitesDust()
+  PlaySoundFile("Interface\\AddOns\\StayinAlive\\Sounds\\bites-dust.mp3")
 end
 
 -- Only for events
@@ -132,7 +149,8 @@ local function eventHandler(self, event, ...)
       if StayinAlive_CharacterDB == nil then
         StayinAlive_CharacterDB = {
           sendToGuildChat = false,
-          healthThreshold = 20
+          healthThreshold = 20,
+          debugMessages   = false
         }
       end
       InitializeUI()
@@ -149,15 +167,16 @@ local function eventHandler(self, event, ...)
   end
 
   if (event == "PLAYER_LEVEL_CHANGED") then
-    print("Stayin alive!")
-    local level = UnitLevel("player")
-    local name = UnitName("player")
+    
+    local level          = UnitLevel("player")
+    local name           = UnitName("player")
     local percentOfSixty = math.floor((level / 60) * 100)
+    local eventString    = name.." is stayin alive! Now level "..level.." ("..percentOfSixty.."% to 60!)."
 
     if StayinAlive_CharacterDB.sendToGuildChat then
-      SendChatMessage(name.." is stayin alive! Now level "..level..", "..percentOfSixty.."% to 60!","GUILD")
+      SendChatMessage(eventString,"GUILD")
     else
-      print(name.." is stayin alive! Now level "..level..", "..percentOfSixty.."% to 60!")
+      print(eventString)
     end
 
     playStayinAlive()
@@ -167,25 +186,46 @@ local function eventHandler(self, event, ...)
   -- Best event for "in combat"
   if (event == "PLAYER_REGEN_DISABLED") then
     target = UnitName("target")
-    --print("Stayin alive against "..target.."!")
+    
+    if StayinAlive_CharacterDB.debugMessages then
+      print("StayinAlive Debug:  Combat started with "..target..".")
+    end
   end
 
   -- Best event for "out of combat"
   if (event == "PLAYER_REGEN_ENABLED") then
+
+    -- debug
+    if StayinAlive_CharacterDB.debugMessages then
+      print("StayinAlive Debug:  Combat ended with "..target..".")
+    end
+
     local max_health = UnitHealthMax("player")
     local health = UnitHealth("player")
     local health_percent = math.floor((health / max_health) * 100)
     local name = UnitName("player")
 
     if health_percent == 0 then  
-      SendChatMessage(name.." has died at the hands of a "..target.."!  F.  RIP.  Go agane!","GUILD")
+
+      local eventString = name.." has died at the hands of a "..target.."!  F.  RIP.  Go agane!"
+      if StayinAlive_CharacterDB.sendToGuildChat then
+        SendChatMessage(eventString,"GUILD")
+      else
+        print(eventString)
+      end
+      
+      playBitesDust()
+
     elseif health_percent < StayinAlive_CharacterDB.healthThreshold then
-      print(name.." is still alive with "..health_percent.."% health")
 
-      --print(target)
+      local eventString = name.." escaped death from a "..target.." with "..health_percent.."% health."
+      
+      if StayinAlive_CharacterDB.sendToGuildChat then
+        SendChatMessage(eventString,"GUILD")
+      else
+        print(eventString)
+      end
 
-      SendChatMessage(name.." narrowly escapes death from a "..target.." with only "..health_percent..
-                            "% health, but is still alive!",  "GUILD")
       playStillAlive()
     end
   end
