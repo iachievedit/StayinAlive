@@ -195,15 +195,15 @@ local function eventHandler(self, event, ...)
   -- Best event for "out of combat"
   if (event == "PLAYER_REGEN_ENABLED") then
 
-    -- debug
-    if StayinAlive_CharacterDB.debugMessages then
-      print("StayinAlive Debug:  Combat ended with "..target..".")
-    end
-
     local max_health = UnitHealthMax("player")
     local health = UnitHealth("player")
     local health_percent = math.floor((health / max_health) * 100)
     local name = UnitName("player")
+
+    -- debug
+    if StayinAlive_CharacterDB.debugMessages then
+      print("StayinAlive Debug:  Combat ended with "..target.." with "..health_percent.."% health.")
+    end
 
     if health_percent == 0 then  
 
